@@ -14,7 +14,9 @@ The `.mockGraphql` should be called in the Cypress `before` or `beforeEach` bloc
 config to setup the server. This method takes a schema, either in the form of one or more SDL files, or as the JSON result of an introspection query.
 
 ```
-const schema = fs.readFileSync('/app-schema.graphql', 'utf8');
+const schema = fs.readFileSync('../../app-schema.graphql', 'utf8');
+// alternatively, using a dumped introspection query:
+// const schema = require('../../dumped-schema.json')
 
 beforeEach(() => {
   cy.server();
