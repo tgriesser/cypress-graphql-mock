@@ -6,6 +6,12 @@
     "dev": "tsc -w",
     "prepublish": "tsc"
   },
+  "files": [
+    "dist/",
+    "src/",
+    "yarn.lock",
+    "README.md"
+  ],
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
