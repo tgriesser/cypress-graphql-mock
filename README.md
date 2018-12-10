@@ -4,7 +4,7 @@ Adds commands for executing a mocked GraphQL server using only the client
 
 ## Installation
 
-`npm install cypress-graphql-plugin`
+`npm install cypress-graphql-mock`
 
 ## Instructions
 
