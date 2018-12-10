@@ -13,7 +13,7 @@ Adds `.mockGraphql()` and `.mockGraphqlOps()` methods to the cypress chain.
 The `.mockGraphql` should be called in the Cypress `before` or `beforeEach` block
 config to setup the server. This method takes a schema, either in the form of one or more SDL files, or as the JSON result of an introspection query.
 
-```
+```ts
 const schema = fs.readFileSync('../../app-schema.graphql', 'utf8');
 // alternatively, using a dumped introspection query:
 // const schema = require('../../dumped-schema.json')
@@ -27,7 +27,7 @@ beforeEach(() => {
 By default, it will use the `/graphql` endpoint, but this can be changed
 depending on the expected server implementation.
 
-```
+```ts
 beforeEach(() => {
   cy.server();
   cy.mockGraphql({
@@ -48,7 +48,7 @@ For example, if we has a query called "UserQuery" and wanted to
 explicitly force a state where a viewer is null (logged out), it would
 look something like:
 
-```
+```ts
 .mockGraphqlOps({
   operations: {
     UserQuery: {
