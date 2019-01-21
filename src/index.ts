@@ -94,22 +94,33 @@ Cypress.Commands.add(
             "Currently only support fetch(url, options), saw fetch(Request)"
           );
         }
+
         if (input.indexOf(endpoint) !== -1 && init && init.method === "POST") {
-          const payload: GQLRequestPayload<AllOperations> = JSON.parse(
+          let json = JSON.parse(
             init.body as string
           );
-          const { operationName, query, variables } = payload;
-          return graphql({
-            schema,
-            source: query,
-            variableValues: variables,
-            operationName,
-            rootValue: getRootValue<AllOperations>(
-              currentOps,
+          json = Array.isArray(json) ? json : [json];
+          return Promise.all(json.map((payload: GQLRequestPayload<AllOperations>) => {
+            const { operationName, query, variables } = payload;
+            return graphql({
+              schema,
+              source: query,
+              variableValues: variables,
               operationName,
-              variables
-            )
-          }).then((data: any) => new Response(JSON.stringify(data)));
+              rootValue: getRootValue<AllOperations>(
+                currentOps,
+                operationName,
+                variables
+              )
+            });
+          })).then(dataArray => new Response(JSON.stringify(
+            dataArray.reduce((prev: any, data: any) => ({
+              data: {
+                ...prev.data,
+                ...data.data,
+              },
+            }), { data: {} })
+          )));
         }
         return originalFetch(input, init);
       }

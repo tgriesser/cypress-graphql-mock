@@ -4,6 +4,7 @@
     "module": "commonjs",
     "outDir": "./dist",
     "rootDir": "./src",
+    "lib": ["dom", "es2015"],
     "importHelpers": true,
     "strict": true,
     "skipLibCheck": true,
