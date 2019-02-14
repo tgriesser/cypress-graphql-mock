@@ -6,6 +6,13 @@ Adds commands for executing a mocked GraphQL server using only the client
 
 `npm install cypress-graphql-mock`
 
+in Cypress' `commands.js` add:
+
+```js
+import 'cypress-graphql-mock';
+```
+
+
 ## Instructions
 
 Adds `.mockGraphql()` and `.mockGraphqlOps()` methods to the cypress chain.
