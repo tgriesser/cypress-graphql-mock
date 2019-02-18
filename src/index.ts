@@ -119,7 +119,7 @@ Cypress.Commands.add(
     cy.wrap({
       setOperations: (newOperations: Partial<AllOperations>) => {
         currentOps = {
-          ...(operations as object),
+          ...currentOps,
           ...(newOperations as object)
         };
       }
