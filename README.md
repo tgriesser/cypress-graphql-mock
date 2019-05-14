@@ -39,13 +39,23 @@ beforeEach(() => {
   cy.server();
   cy.mockGraphql({
     schema,
-    endpoint: '/gql'
+    endpoint: '/gql',
+    operations: {
+      User: { userQuery: { name: "user"} },
+      ValidateUser: [
+        { validateQuery: {isValid: false} },
+        { validateQuery: {isValid: true} }
+      ],
+      Hello: variables => ({ helloQuery: {message: `Hello ${varibales.name}`} })
+    }
   });
 });
 ```
 
 It takes an "operations" object, representing the named operations
-of the GraphQL server. This is combined with the "mocks" option,
+of the GraphQL server. An operation can be Object, Function or Array (for multiple call).
+In case of Array, the order of the elements must fit the order of the calls.
+This is combined with the "mocks" option,
 to modify the output behavior per test.
 
 The `.mockGraphqlOps()` allows you to configure the mock responses at a
