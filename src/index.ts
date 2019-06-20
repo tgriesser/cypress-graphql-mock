@@ -102,6 +102,37 @@ Cypress.Commands.add(
 
     cy.on("window:before:load", win => {
       const originalFetch = win.fetch;
+
+      function mockGraphqlResponse(payload: GQLRequestPayload<AllOperations>): Promise<any> {
+        const { operationName, query, variables } = payload;
+        const rootValue = getRootValue<AllOperations>(
+          currentOps,
+          operationName,
+          variables
+        );
+
+        if (
+          // Additional checks here because of transpilation.
+          // We will loose instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
+          rootValue instanceof GraphQLError ||
+          rootValue.constructor === GraphQLError ||
+          rootValue.constructor.name === "GraphQLError"
+        ) {
+          return Promise.resolve({
+            data: {},
+            errors: [rootValue]
+          });
+        }
+
+        return graphql({
+          schema,
+          source: query,
+          variableValues: variables,
+          operationName,
+          rootValue
+        });
+      }
+
       function fetch(input: RequestInfo, init?: RequestInit) {
         if (typeof input !== "string") {
           throw new Error(
@@ -112,40 +143,14 @@ Cypress.Commands.add(
           const payload: GQLRequestPayload<AllOperations> = JSON.parse(
             init.body as string
           );
-          const { operationName, query, variables } = payload;
-          const rootValue = getRootValue<AllOperations>(
-            currentOps,
-            operationName,
-            variables
-          );
 
-          if (
-            // Additional checks here because of transpilation.
-            // We will loose instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
-            rootValue instanceof GraphQLError ||
-            rootValue.constructor === GraphQLError ||
-            rootValue.constructor.name === "GraphQLError"
-          ) {
-            return Promise.resolve()
-              .then(wait(currentDelay))
-              .then(
-                () =>
-                  new Response(
-                    JSON.stringify({
-                      data: {},
-                      errors: [rootValue]
-                    })
-                  )
-              );
-          }
+          // If an array of queries is sent, we're likely using apollo-link-batch-http
+          // and should resolve each of them independently before responding.
+          const response = Array.isArray(payload)
+            ? Promise.all(payload.map(mockGraphqlResponse))
+            : mockGraphqlResponse(payload);
 
-          return graphql({
-            schema,
-            source: query,
-            variableValues: variables,
-            operationName,
-            rootValue
-          })
+          return response
             .then(wait(currentDelay))
             .then((data: any) => new Response(JSON.stringify(data)));
         }
