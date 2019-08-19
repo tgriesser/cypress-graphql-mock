@@ -113,6 +113,7 @@ In order to test asynchronous behavior sometimes you will need to delay your gra
 ```ts
 cy.mockGraphqlOps({
   operations: {
+    delay: 1000, // 1 second
     userNameChange: new GraphQLError("Your message goes here")
   }
 });
