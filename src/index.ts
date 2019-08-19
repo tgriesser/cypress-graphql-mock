@@ -1,5 +1,5 @@
 /// <reference types="cypress" />
-import { graphql, IntrospectionQuery } from "graphql";
+import { graphql, IntrospectionQuery, GraphQLError } from "graphql";
 import { buildClientSchema, printSchema } from "graphql";
 import {
   makeExecutableSchema,
@@ -99,16 +99,35 @@ Cypress.Commands.add(
             init.body as string
           );
           const { operationName, query, variables } = payload;
+          const rootValue = getRootValue<AllOperations>(
+            currentOps,
+            operationName,
+            variables
+          );
+
+          if (
+            // Additional checks here because of transpilation.
+            // We will use instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
+            rootValue instanceof GraphQLError ||
+            rootValue.constructor === GraphQLError ||
+            rootValue.constructor.name === "GraphQLError"
+          ) {
+            return Promise.resolve(
+              new Response(
+                JSON.stringify({
+                  data: {},
+                  errors: [rootValue]
+                })
+              )
+            );
+          }
+
           return graphql({
             schema,
             source: query,
             variableValues: variables,
             operationName,
-            rootValue: getRootValue<AllOperations>(
-              currentOps,
-              operationName,
-              variables
-            )
+            rootValue
           }).then((data: any) => new Response(JSON.stringify(data)));
         }
         return originalFetch(input, init);
@@ -120,7 +139,7 @@ Cypress.Commands.add(
       setOperations: (newOperations: Partial<AllOperations>) => {
         currentOps = {
           ...currentOps,
-          ...(newOperations as object)
+          ...newOperations
         };
       }
     }).as(getAlias(options));
@@ -165,7 +184,12 @@ function getRootValue<AllOperations>(
   }
   const op = operations[operationName];
   if (typeof op === "function") {
-    return op(variables);
+    try {
+      return op(variables);
+    } catch (e) {
+      return e; // properly handle dynamic throw new GraphQLError("message")
+    }
   }
+
   return op;
 }
