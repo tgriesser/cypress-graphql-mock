@@ -30,6 +30,34 @@ beforeEach(() => {
 });
 ```
 
+Actually it is not possible to use `fs.readFileSync` right in the cypress tests. So here you can create custom command. Add this to your `cypress/plugins/index.js`.
+
+```ts
+module.exports = (on, config) => {
+  on("task", {
+    getSchema() {
+      return fs.readFileSync(
+        path.resolve(__dirname, "../../app-schema.graphql""),
+        "utf8"
+      );
+    }
+  });
+};
+```
+
+And then in the code you will be able to
+
+```ts
+beforeEach(() => {
+  cy.task("getSchema").then(schema => {
+    cy.mockGraphql({
+      schema,
+      operations: { ... }
+    });
+  });
+});
+```
+
 By default, it will use the `/graphql` endpoint, but this can be changed
 depending on the expected server implementation.
 
