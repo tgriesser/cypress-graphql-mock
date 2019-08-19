@@ -9,9 +9,8 @@ Adds commands for executing a mocked GraphQL server using only the client
 in Cypress' `commands.js` add:
 
 ```js
-import 'cypress-graphql-mock';
+import "cypress-graphql-mock";
 ```
-
 
 ## Instructions
 
@@ -21,7 +20,7 @@ The `.mockGraphql` should be called in the Cypress `before` or `beforeEach` bloc
 config to setup the server. This method takes a schema, either in the form of one or more SDL files, or as the JSON result of an introspection query.
 
 ```ts
-const schema = fs.readFileSync('../../app-schema.graphql', 'utf8');
+const schema = fs.readFileSync("../../app-schema.graphql", "utf8");
 // alternatively, using a dumped introspection query:
 // const schema = require('../../dumped-schema.json')
 
@@ -39,7 +38,7 @@ beforeEach(() => {
   cy.server();
   cy.mockGraphql({
     schema,
-    endpoint: '/gql'
+    endpoint: "/gql"
   });
 });
 ```
@@ -65,10 +64,76 @@ look something like:
 })
 ```
 
-### Example
+### Examples
 
-[Githunt React](https://github.com/tgriesser/GitHunt-React/blob/8eef144a368a7dcf4d4ff974972706dcf4840dbb/cypress/integration/feed/load_more.ts)
+#### Real application example
+
+- [Githunt React](https://github.com/tgriesser/GitHunt-React/blob/8eef144a368a7dcf4d4ff974972706dcf4840dbb/cypress/integration/feed/load_more.ts)
+
+#### Simple mutation
+
+Just return mutation result. Make sure that mostly always you will need to duplicate mutation name 1st time as operation key, and 2nd as return data object key.
+
+```ts
+cy.server();
+cy.mockGraphql({ schema });
+cy.mockGraphqlOps({
+  operations: {
+    userNameChange: {
+      userNameChange: {
+        name: "New user name"
+      }
+    }
+  }
+});
+```
+
+It is also possible to pass a function to simulate dynamic resolver.
+
+```ts
+cy.server();
+cy.mockGraphql({ schema });
+cy.mockGraphqlOps({
+  operations: {
+    userNameChange: variables => ({
+      userNameChange: {
+        viewer: {
+          name: variables.name
+        }
+      }
+    })
+  }
+});
+```
+
+#### Error handling
+
+```ts
+import { GraphQLError } from "graphql";
+
+cy.server();
+cy.mockGraphql({ schema });
+cy.mockGraphqlOps({
+  operations: {
+    userNameChange: new GraphQLError("Your message goes here")
+  }
+});
+```
+
+It is also possible to throw error from the function. Just `return` or `throw` a GraphQLError.
+
+```ts
+cy.mockGraphqlOps({
+  operations: {
+    userNameChange: (variables) => {
+      if (!variables.name) {
+        throw new GraphQLError("Name is required")
+      }
+    }
+  }
+});
 
 ### License
 
 MIT
+```
