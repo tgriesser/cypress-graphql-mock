@@ -6,7 +6,9 @@
     "dev": "tsc -w",
     "cypress:open": "yarn cypress open --project ./test",
     "cypress:run": "yarn cypress run --project ./test/cypress",
-    "run-test-app": "cd ./test/test-graphql-app && SKIP_PREFLIGHT_CHECK=true yarn start",
+    "test-app:run": "cd ./test/test-graphql-app && SKIP_PREFLIGHT_CHECK=true yarn start",
+    "test-app:build": "cd ./test/test-graphql-app && SKIP_PREFLIGHT_CHECK=true yarn build",
+    "test-app:serve": "serve -s -l 3000 test/test-graphql-app/build",
     "prepublish": "tsc"
   },
   "main": "dist",
@@ -46,8 +48,10 @@
     "husky": "^1.2.0",
     "lint-staged": "^8.1.0",
     "prettier": "^1.15.3",
+    "serve": "^11.1.0",
     "ts-loader": "^6.0.4",
     "typescript": "^3.2.2",
+    "wait-on": "^3.3.0",
     "webpack": "^4.39.2"
   }
 }
