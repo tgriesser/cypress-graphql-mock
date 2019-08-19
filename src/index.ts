@@ -107,7 +107,7 @@ Cypress.Commands.add(
 
           if (
             // Additional checks here because of transpilation.
-            // We will use instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
+            // We will loose instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
             rootValue instanceof GraphQLError ||
             rootValue.constructor === GraphQLError ||
             rootValue.constructor.name === "GraphQLError"
