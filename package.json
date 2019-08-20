@@ -1,7 +1,7 @@
 {
   "name": "cypress-graphql-mock",
   "description": "Mock out a GraphQL schema from the client",
-  "version": "0.1.2",
+  "version": "0.3.0",
   "scripts": {
     "dev": "tsc --declarationMap -w",
     "cypress:open": "yarn cypress open --project ./test",
@@ -45,12 +45,12 @@
     "@cypress/webpack-preprocessor": "^4.1.0",
     "@types/graphql": "^14.0.3",
     "cypress": "^3.4.1",
+    "graphql": "^14.0.2",
     "husky": "^1.2.0",
     "lint-staged": "^8.1.0",
     "prettier": "^1.15.3",
     "serve": "^11.1.0",
     "ts-loader": "^6.0.4",
-    "graphql": "^14.0.2",
     "typescript": "^3.2.2",
     "wait-on": "^3.3.0",
     "webpack": "^4.39.2"
