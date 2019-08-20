@@ -13,8 +13,7 @@
     "noImplicitReturns": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "declaration": true,
-    "declarationMap": true
+    "declaration": true
   },
   "include": ["./src/**/*.ts"]
 }
