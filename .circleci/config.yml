@@ -4,6 +4,7 @@ jobs:
       - image: cypress/browsers:chrome69
     steps:
       - checkout
+      - run: node --version
       - restore_cache:
           name: Restore Cache
           keys:
