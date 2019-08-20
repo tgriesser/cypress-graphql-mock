@@ -1,19 +1,7 @@
 jobs:
-  cypress_tests:
-    description: Run cypress tests
+  build:
     docker:
       - image: cypress/browsers-chrome69
-    steps:
-      - run: yarn test-app:build
-      - run:
-          background: true
-          name: Run docs in background
-          command: yarn workspace docs start
-      - run: yarn test-app:serve
-      - run: npx wait-on http://localhost:3000
-      - run: yarn cypress:run
-
-  build:
     steps:
       - checkout
       - restore_cache:
@@ -31,6 +19,11 @@ jobs:
       - run:
           name: Build
           command: yarn tsc
+      - run: yarn test-app:build
       - run:
-          name: Test
-          command: cypress/
+          background: true
+          name: Run docs in background
+          command: yarn workspace docs start
+      - run: yarn test-app:serve
+      - run: npx wait-on http://localhost:3000
+      - run: yarn cypress:run
