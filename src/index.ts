@@ -97,7 +97,7 @@ Cypress.Commands.add(
       mocks
     });
 
-    let currentDelay = delay
+    let currentDelay = delay;
     let currentOps = operations;
 
     cy.on("window:before:load", win => {
@@ -156,7 +156,7 @@ Cypress.Commands.add(
     //
     cy.wrap({
       setOperations: (options: SetOperationsOpts<AllOperations>) => {
-        currentDelay = options.delay || 0
+        currentDelay = options.delay || 0;
         currentOps = {
           ...currentOps,
           ...options.operations
@@ -171,10 +171,7 @@ Cypress.Commands.add(
   <AllOperations extends Record<string, any>>(
     options: SetOperationsOpts<AllOperations>
   ) => {
-    cy.get(`@${getAlias(options)}`).invoke(
-      "setOperations" as any,
-      options
-    );
+    cy.get(`@${getAlias(options)}`).invoke("setOperations" as any, options);
   }
 );
 
