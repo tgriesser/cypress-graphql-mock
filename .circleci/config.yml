@@ -20,6 +20,7 @@ jobs:
           name: Build
           command: yarn tsc
       - run: yarn test-app:build
+      - run: cd test/test-graphql-app && yarn
       - run:
           background: true
           name: Run docs in background
