@@ -1,5 +1,5 @@
 /// <reference types="cypress" />
-import { graphql, IntrospectionQuery } from "graphql";
+import { graphql, IntrospectionQuery, GraphQLError } from "graphql";
 import { buildClientSchema, printSchema } from "graphql";
 import {
   makeExecutableSchema,
@@ -13,12 +13,17 @@ interface MockGraphQLOptions<AllOperations extends Record<string, any>> {
   mocks?: IMocks;
   endpoint?: string;
   operations?: Partial<AllOperations>;
+  /* Global Delay for stubbed responses (in ms) */
+  delay?: number;
 }
 
 interface SetOperationsOpts<AllOperations> {
   name?: string;
   endpoint?: string;
+  /* Operations object. Make sure that mocks must not be wrapped with `data` property */
   operations?: Partial<AllOperations>;
+  /* Delay for stubbed responses (in ms) */
+  delay?: number;
 }
 
 interface GQLRequestPayload<AllOperations extends Record<string, any>> {
@@ -39,6 +44,9 @@ declare global {
     }
   }
 }
+
+const wait = (timeout: number) => <T>(response?: T) =>
+  new Promise<T>(resolve => setTimeout(() => resolve(response), timeout));
 
 /**
  * Adds a .mockGraphql() and .mockGraphqlOps() methods to the cypress chain.
@@ -73,7 +81,12 @@ Cypress.Commands.add(
   <AllOperations extends Record<string, any>>(
     options: MockGraphQLOptions<AllOperations>
   ) => {
-    const { endpoint = "/graphql", operations = {}, mocks = {} } = options;
+    const {
+      endpoint = "/graphql",
+      delay = 0,
+      operations = {},
+      mocks = {}
+    } = options;
 
     const schema = makeExecutableSchema({
       typeDefs: schemaAsSDL(options.schema)
@@ -84,6 +97,7 @@ Cypress.Commands.add(
       mocks
     });
 
+    let currentDelay = delay
     let currentOps = operations;
 
     cy.on("window:before:load", win => {
@@ -99,17 +113,41 @@ Cypress.Commands.add(
             init.body as string
           );
           const { operationName, query, variables } = payload;
+          const rootValue = getRootValue<AllOperations>(
+            currentOps,
+            operationName,
+            variables
+          );
+
+          if (
+            // Additional checks here because of transpilation.
+            // We will loose instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
+            rootValue instanceof GraphQLError ||
+            rootValue.constructor === GraphQLError ||
+            rootValue.constructor.name === "GraphQLError"
+          ) {
+            return Promise.resolve()
+              .then(wait(currentDelay))
+              .then(
+                () =>
+                  new Response(
+                    JSON.stringify({
+                      data: {},
+                      errors: [rootValue]
+                    })
+                  )
+              );
+          }
+
           return graphql({
             schema,
             source: query,
             variableValues: variables,
             operationName,
-            rootValue: getRootValue<AllOperations>(
-              currentOps,
-              operationName,
-              variables
-            )
-          }).then((data: any) => new Response(JSON.stringify(data)));
+            rootValue
+          })
+            .then(wait(currentDelay))
+            .then((data: any) => new Response(JSON.stringify(data)));
         }
         return originalFetch(input, init);
       }
@@ -117,10 +155,11 @@ Cypress.Commands.add(
     });
     //
     cy.wrap({
-      setOperations: (newOperations: Partial<AllOperations>) => {
+      setOperations: (options: SetOperationsOpts<AllOperations>) => {
+        currentDelay = options.delay || 0
         currentOps = {
           ...currentOps,
-          ...(newOperations as object)
+          ...options.operations
         };
       }
     }).as(getAlias(options));
@@ -134,7 +173,7 @@ Cypress.Commands.add(
   ) => {
     cy.get(`@${getAlias(options)}`).invoke(
       "setOperations" as any,
-      options.operations || {}
+      options
     );
   }
 );
@@ -165,7 +204,12 @@ function getRootValue<AllOperations>(
   }
   const op = operations[operationName];
   if (typeof op === "function") {
-    return op(variables);
+    try {
+      return op(variables);
+    } catch (e) {
+      return e; // properly handle dynamic throw new GraphQLError("message")
+    }
   }
+
   return op;
 }

@@ -1,0 +1,35 @@
+jobs:
+  cypress_tests:
+    description: Run cypress tests
+    executor: cypress/browsers-chrome69
+    steps:
+      - run: yarn test-app:build
+      - run:
+          background: true
+          name: Run docs in background
+          command: yarn workspace docs start
+      - run: yarn test-app:serve
+      - run: npx wait-on http://localhost:3000
+      - run: yarn cypress:run
+
+  build:
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore Cache
+          keys:
+            - yarn-packages-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install Dependencies
+          command: yarn install --frozen-lockfile
+      - save_cache:
+          name: Save Cache
+          key: yarn-packages-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache
+      - run:
+          name: Build
+          command: yarn tsc
+      - run:
+          name: Test
+          command: cypress/
