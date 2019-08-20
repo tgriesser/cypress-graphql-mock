@@ -1,7 +1,8 @@
 jobs:
   cypress_tests:
     description: Run cypress tests
-    executor: cypress/browsers-chrome69
+    docker:
+      - image: cypress/browsers-chrome69
     steps:
       - run: yarn test-app:build
       - run:
