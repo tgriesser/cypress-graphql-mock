@@ -1,7 +1,7 @@
 jobs:
   build:
     docker:
-      - image: cypress/browsers-chrome69
+      - image: cypress/browsers:chrome69
     steps:
       - checkout
       - restore_cache:
