@@ -20,7 +20,7 @@ jobs:
       - run:
           name: Build
           command: yarn tsc
-      - run: cd test/test-graphql-app && yarn
+      - run: cd test/test-graphql-app && npm i
       - run: yarn test-app:build
       - run:
           background: true
