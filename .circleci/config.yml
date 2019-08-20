@@ -24,8 +24,7 @@ jobs:
       - run: yarn test-app:build
       - run:
           background: true
-          name: Run docs in background
-          command: yarn workspace docs start
-      - run: yarn test-app:serve
+          name: Serve test app
+          command: yarn test-app:serve
       - run: npx wait-on http://localhost:3000
       - run: yarn cypress:run
