@@ -21,7 +21,7 @@ const queries = {
 export const App = () => {
   const [currentQuery, setQuery] = React.useState(null);
   return (
-    <Grid container direction="column">
+    <Grid id="tester" container direction="column">
       <ToggleButtonGroup
         exclusive
         value={currentQuery}

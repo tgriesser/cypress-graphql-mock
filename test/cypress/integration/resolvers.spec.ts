@@ -48,4 +48,23 @@ describe("Resolvers", () => {
       })
     );
   });
+
+  it("Should wait for the delayed response", () => {
+    cy.mockGraphqlOps({
+      delay: 2000,
+      operations: {
+        user: {
+          id: 1,
+          name: "Name",
+          email: "Email"
+        }
+      }
+    });
+
+    cy.visit("/");
+    cy.get("#GET_USER").click();
+    cy.get("#tester").contains('Loading...')
+    cy.wait(2000)
+    cy.get("#tester").should('not.contain', 'Loading...')
+  })
 });
