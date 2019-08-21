@@ -172,8 +172,8 @@ cy.mockGraphqlOps({
     }
   }
 });
+```
 
 ### License
 
 MIT
-```
