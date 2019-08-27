@@ -5,7 +5,7 @@ const wp = require("@cypress/webpack-preprocessor");
 const webpackOptions = {
   watch: true,
   resolve: {
-    extensions: [".ts", ".js", ".mjs"]
+    extensions: [".ts", ".js", ".mjs", ".jsx"]
   },
   module: {
     rules: [

@@ -13,7 +13,6 @@ describe("Resolvers", () => {
         getUser: {
           user: {
             id: 1,
-            name: "Name",
             email: "Email"
           }
         }
@@ -25,7 +24,13 @@ describe("Resolvers", () => {
     cy.get("#data").should(
       "contain",
       JSON.stringify({
-        user: { id: 1, name: "Name", email: "Email", __typename: "User" }
+        user: {
+          id: 1,
+          name: "Test User",
+          email: "Email",
+          createdAt: new Date("2019-01-01T00:00:00.000Z"),
+          __typename: "User"
+        }
       })
     );
   });
@@ -41,11 +46,12 @@ describe("Resolvers", () => {
     cy.get("#GET_USER").click();
     cy.get("#error").should(
       "contain",
-      "Error :" + JSON.stringify({
-        graphQLErrors: [{ message: "Some message" }],
-        networkError: null,
-        message: "GraphQL error: Some message"
-      })
+      "Error :" +
+        JSON.stringify({
+          graphQLErrors: [{ message: "Some message" }],
+          networkError: null,
+          message: "GraphQL error: Some message"
+        })
     );
   });
 
@@ -53,18 +59,20 @@ describe("Resolvers", () => {
     cy.mockGraphqlOps({
       delay: 2000,
       operations: {
-        user: {
-          id: 1,
-          name: "Name",
-          email: "Email"
+        getUser: {
+          user: {
+            id: 1,
+            name: "Name",
+            email: "Email"
+          }
         }
       }
     });
 
     cy.visit("/");
     cy.get("#GET_USER").click();
-    cy.get("#tester").contains('Loading...')
-    cy.wait(2000)
-    cy.get("#tester").should('not.contain', 'Loading...')
-  })
+    cy.get("#tester").contains("Loading...");
+    cy.wait(2000);
+    cy.get("#tester").should("not.contain", "Loading...");
+  });
 });

@@ -9,8 +9,23 @@ Adds commands for executing a mocked GraphQL server using only the client
 in Cypress' `commands.js` add:
 
 ```js
-import "cypress-graphql-mock";
+import { setBaseGraphqlMocks } from "cypress-graphql-mock";
+
+// Set all of your base mocks, as described in
+// https://www.apollographql.com/docs/graphql-tools/mocking/#default-mock-example
+setBaseGraphqlMocks({
+  User: () => ({
+    id: () => randomId(),
+    name: "Test User"
+  }),
+  DateTime(obj, args, context, field) {
+    if (obj[field.fieldName]) return obj[field.fieldName];
+    return new Date("2019-01-01");
+  }
+});
 ```
+
+See the "code generation" section below for more info on how to generate types for this.
 
 ## Instructions
 
@@ -147,6 +162,21 @@ cy.mockGraphqlOps({
 });
 ```
 
+#### Code Generation
+
+This plugin ships with a [graphql-code-generator](https://graphql-code-generator.com/) plugin to generate typings for the "RootTypes" and the mock operations.
+
+See the [graphql-code-generator](https://graphql-code-generator.com/docs/plugins/) docs around plugins, and the example app / `codegen.yml` in the root for an example use:
+
+```yml
+test/cypress/generated/generated-mock-types.d.ts:
+  documents: "test/test-graphql-app/**/*.jsx"
+  plugins:
+    - typescript
+    - typescript-operations
+    - cypress-graphql-mock/codegen
+```
+
 #### Error handling
 
 ```ts
@@ -165,15 +195,15 @@ It is also possible to throw error from the function. Just `return` or `throw` a
 ```ts
 cy.mockGraphqlOps({
   operations: {
-    userNameChange: (variables) => {
+    userNameChange: variables => {
       if (!variables.name) {
-        throw new GraphQLError("Name is required")
+        throw new GraphQLError("Name is required");
       }
     }
   }
 });
+```
 
 ### License
 
 MIT
-```
