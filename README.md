@@ -78,7 +78,7 @@ to modify the output behavior per test.
 The `.mockGraphqlOps()` allows you to configure the mock responses at a
 more granular level
 
-For example, if we has a query called "UserQuery" and wanted to
+For example, if we have a query called "UserQuery" and wanted to
 explicitly force a state where a viewer is null (logged out), it would
 look something like:
 
