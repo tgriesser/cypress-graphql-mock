@@ -66,5 +66,31 @@ describe("Resolvers", () => {
     cy.get("#tester").contains('Loading...')
     cy.wait(2000)
     cy.get("#tester").should('not.contain', 'Loading...')
-  })
+  });
+
+
+  it("Should rerequest persisted queries", () => {
+    cy.on('window:before:load', window => window.__USE_PERSISTED_QUERY_LINK = true);
+
+    cy.mockGraphqlOps({
+      operations: {
+        getUser: {
+          user: {
+            id: 1,
+            name: "Name",
+            email: "Email"
+          }
+        }
+      }
+    });
+
+    cy.visit("/");
+    cy.get("#GET_USER").click();
+    cy.get("#data").should(
+      "contain",
+      JSON.stringify({
+        user: { id: 1, name: "Name", email: "Email", __typename: "User" }
+      })
+    );
+  });
 });

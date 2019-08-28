@@ -1,5 +1,5 @@
 import React from "react";
-import { gql } from "apollo-boost";
+import gql from "graphql-tag";
 import { Query } from "react-apollo";
 import Grid from "@material-ui/core/Grid";
 import ToggleButton from "@material-ui/lab/ToggleButton";
