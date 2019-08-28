@@ -15,6 +15,15 @@ const queries = {
         email
       }
     }
+  `,
+  GET_RECIPE: gql`
+    query getRecipe {
+      recipe(id: 1) {
+        id
+        title
+        ingredients
+      }
+    }
   `
 };
 
@@ -29,25 +38,41 @@ export const App = () => {
         onChange={(e, value) => setQuery(value)}
       >
         {Object.keys(queries).map(query => (
-          <ToggleButton key={query} id={query} value={query} children={query} />
+          <ToggleButton
+            key={query}
+            id={query}
+            value={[query]}
+            children={query}
+          />
         ))}
+        <ToggleButton
+          key="MULTIPLE"
+          id="MULTIPLE"
+          children="GET_USER+GET_RECIPE"
+          value={["GET_USER", "GET_RECIPE"]}
+        />
       </ToggleButtonGroup>
 
-      {currentQuery && (
-        <Card>
-          <CardContent>
-            <Query variables={{ id: 1 }} query={queries[currentQuery]}>
-              {({ loading, error, data }) => {
-                if (loading) return <div id="loading">Loading...</div>;
-                if (error)
-                  return <div id="error">Error :{JSON.stringify(error)} </div>;
+      {currentQuery &&
+        currentQuery.map(query => (
+          <Card>
+            <CardContent>
+              <Query query={queries[query]}>
+                {({ loading, error, data }) => {
+                  if (loading) return <div id="loading">Loading...</div>;
+                  if (error)
+                    return (
+                      <div id="error">Error :{JSON.stringify(error)} </div>
+                    );
 
-                return <div id="data"> {JSON.stringify(data)} </div>;
-              }}
-            </Query>
-          </CardContent>
-        </Card>
-      )}
+                  return (
+                    <div id={`${query}_RESULT`}> {JSON.stringify(data)} </div>
+                  );
+                }}
+              </Query>
+            </CardContent>
+          </Card>
+        ))}
     </Grid>
   );
 };

@@ -1744,6 +1744,24 @@ apollo-client@^2.6.4:
     tslib "^1.9.3"
     zen-observable "^0.8.0"
 
+apollo-link-batch-http@^1.2.12:
+  version "1.2.12"
+  resolved "https://registry.yarnpkg.com/apollo-link-batch-http/-/apollo-link-batch-http-1.2.12.tgz#5c090b6300cf56695751d2246079c2f7d7b9c0f9"
+  integrity sha512-nyhogmcsVa24gpEw0vnHpquf2cANp/xMncs7F6cJzKBzDCvjp80yfhbrQSDqYocdQw4VjeDPCOoz4cqEH8r1TA==
+  dependencies:
+    apollo-link "^1.2.12"
+    apollo-link-batch "^1.1.13"
+    apollo-link-http-common "^0.2.14"
+    tslib "^1.9.3"
+
+apollo-link-batch@^1.1.13:
+  version "1.1.13"
+  resolved "https://registry.yarnpkg.com/apollo-link-batch/-/apollo-link-batch-1.1.13.tgz#cc73cb59d994c41b1c657b597ed95393bc3bb2d6"
+  integrity sha512-Be/kQfY1KcXuSNk0MYdbFqOv8LtLkNgJcO96ynwu6geNiO2rPUi4rn8wjbc2YRwnJ3Qjy95YRbxr+O8gfpT/vw==
+  dependencies:
+    apollo-link "^1.2.12"
+    tslib "^1.9.3"
+
 apollo-link-http-common@^0.2.14:
   version "0.2.14"
   resolved "https://registry.yarnpkg.com/apollo-link-http-common/-/apollo-link-http-common-0.2.14.tgz#d3a195c12e00f4e311c417f121181dcc31f7d0c8"
