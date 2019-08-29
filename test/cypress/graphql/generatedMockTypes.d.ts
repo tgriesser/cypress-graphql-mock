@@ -70,3 +70,41 @@ export type GetUserQuery = { __typename?: "Query" } & {
     { __typename?: "User" } & Pick<User, "id" | "name" | "email" | "createdAt">
   >;
 };
+
+import { GraphQLResolveInfo, GraphQLError } from "graphql";
+
+export type MockResolve<T> = (
+  obj: any,
+  args: any,
+  ctx: any,
+  info: GraphQLResolveInfo
+) => T;
+
+export type ErrorOrValue<T> = T | GraphQLError;
+
+export type ResolverOrValue<T> = T | MockResolve<T>;
+
+export type PartialDeep<T> = { [P in keyof T]?: PartialDeep<T[P]> };
+
+export type PartialResolveDeep<T> = T extends object
+  ? { [P in keyof T]?: ResolverOrValue<PartialResolveDeep<T[P]>> }
+  : T;
+
+export type TypeMock<T> = () => PartialResolveDeep<T>;
+
+declare global {
+  interface CypressMockBaseTypes {
+    Boolean?: MockResolve<Scalars["Boolean"]>;
+    DateTime?: MockResolve<Scalars["DateTime"]>;
+    EnumField?: MockResolve<EnumField>;
+    Int?: MockResolve<Scalars["Int"]>;
+    Mutation?: TypeMock<Mutation>;
+    Query?: TypeMock<Query>;
+    Recipe?: TypeMock<Recipe>;
+    String?: MockResolve<Scalars["String"]>;
+    User?: TypeMock<User>;
+  }
+  interface CypressMockOperationTypes {
+    getUser: ErrorOrValue<GetUserQuery | PartialDeep<GetUserQuery>>;
+  }
+}

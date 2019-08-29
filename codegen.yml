@@ -4,16 +4,11 @@ hooks:
     - prettier --write
 schema: "test/cypress/test-schema.graphql"
 generates:
-  test/cypress/generated/generated-operation-types.ts:
+  test/cypress/graphql/generatedMockTypes.d.ts:
     documents: "test/test-graphql-app/**/*.jsx"
     plugins:
       - typescript
       - typescript-operations
-    config:
-      enumsAsTypes: true
-  test/cypress/generated/generated-mock-types.d.ts:
-    documents: "test/test-graphql-app/**/*.jsx"
-    plugins:
       - codegen.js
     config:
-      typesFile: ./generated-operation-types
+      enumsAsTypes: true

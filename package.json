@@ -3,13 +3,13 @@
   "description": "Mock out a GraphQL schema from the client",
   "version": "0.5.0-alpha.3",
   "scripts": {
-    "dev": "tsc -w",
+    "dev": "rm -rf dist && tsc -w",
     "cypress:open": "yarn cypress open --project ./test",
     "cypress:run": "yarn cypress run --project ./test",
     "test-app:run": "cd ./test/test-graphql-app && SKIP_PREFLIGHT_CHECK=true yarn start",
     "test-app:build": "cd ./test/test-graphql-app && SKIP_PREFLIGHT_CHECK=true yarn build",
     "test-app:serve": "serve -s -l 3000 test/test-graphql-app/build",
-    "prepublish": "tsc"
+    "prepublish": "rm -rf dist && tsc"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

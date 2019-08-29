@@ -175,6 +175,8 @@ test/cypress/generated/generated-mock-types.d.ts:
     - typescript
     - typescript-operations
     - cypress-graphql-mock/codegen
+  config:
+    enumsAsTypes: true
 ```
 
 #### Error handling

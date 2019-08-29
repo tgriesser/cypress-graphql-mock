@@ -3,45 +3,28 @@ import { graphql, IntrospectionQuery, GraphQLError } from "graphql";
 import { buildClientSchema, printSchema } from "graphql";
 import { makeExecutableSchema, addMockFunctionsToSchema } from "graphql-tools";
 
-export type MockOperations = CypressMockOperationTypes extends infer U
-  ? U
-  : never;
-
-export interface MockGraphQLOptions {
-  schema: string | string[] | IntrospectionQuery;
-  name?: string;
+export interface MockGraphQLOptions extends SetOperationsOpts {
+  schema?: string | string[] | IntrospectionQuery;
   mocks?: CypressMockBaseTypes;
-  endpoint?: string;
-  operations?: MockOperations;
-  /* Global Delay for stubbed responses (in ms) */
-  delay?: number;
 }
 
 export interface SetOperationsOpts {
   name?: string;
   endpoint?: string;
   /* Operations object. Make sure that mocks must not be wrapped with `data` property */
-  operations?: MockOperations;
-  /* Delay for stubbed responses (in ms) */
-  delay?: number;
-}
-
-export interface SetOperationsOpts {
-  name?: string;
-  endpoint?: string;
-  /* Operations object. Make sure that mocks must not be wrapped with `data` property */
-  operations?: MockOperations;
+  operations?: Partial<CypressMockOperationTypes>;
   /* Delay for stubbed responses (in ms) */
   delay?: number;
 }
 
 export interface GQLRequestPayload {
-  operationName: Extract<keyof MockOperations, string>;
+  operationName: Extract<keyof CypressMockOperationTypes, string>;
   query: string;
   variables: any;
 }
 
-let commonMocks: any = {};
+let commonMocks: any = null;
+let commonOptions: any = null;
 
 declare global {
   interface CypressMockBaseTypes {}
@@ -62,23 +45,28 @@ const wait = (timeout: number) => <T>(response?: T) =>
  * mocks as common between multiple commands.
  */
 export const setBaseGraphqlMocks = (mocks: CypressMockBaseTypes) => {
-  commonMocks = mocks;
-};
-
-export const mockOperation = <K extends keyof CypressMockOperationTypes>(
-  operationName: K,
-  mockValue: CypressMockOperationTypes[K]
-) => {
-  return {
-    [operationName]: mockValue
-  };
+  if (!commonMocks) {
+    commonMocks = mocks;
+  } else {
+    throw new Error(
+      `setBaseGraphqlMocks may only be called once, already called.`
+    );
+  }
+  return mocks;
 };
 
 /**
- * Identity passthrough function, useful for type-completion when you want to
- * define the operation separately from where it's defined.
+ * Add .baseGraphqlMocks() to the Cypress chain. Used when we want to set the
+ * mocks as common between multiple commands.
  */
-export const mockOperationConfig = (options: MockGraphQLOptions) => {
+export const setBaseOperationOptions = (options: CypressMockBaseTypes) => {
+  if (!commonOptions) {
+    commonOptions = options;
+  } else {
+    throw new Error(
+      `setBaseOperationOptions may only be called once, already called.`
+    );
+  }
   return options;
 };
 
@@ -110,20 +98,31 @@ export const mockOperationConfig = (options: MockGraphQLOptions) => {
  *   }
  * })
  */
-Cypress.Commands.add("mockGraphql", (options: MockGraphQLOptions) => {
+Cypress.Commands.add("mockGraphql", (options?: MockGraphQLOptions) => {
+  const mergedOptions = {
+    ...(commonOptions || {}),
+    ...(options || {})
+  };
   const {
     endpoint = "/graphql",
     delay = 0,
     operations = {},
-    mocks = {}
-  } = options;
+    mocks = {},
+    schema = undefined
+  } = mergedOptions;
 
-  const schema = makeExecutableSchema({
-    typeDefs: schemaAsSDL(options.schema)
+  if (!schema) {
+    throw new Error(
+      "Schema must be provided to the mockGraphql or setBaseOperationOptions"
+    );
+  }
+
+  const executableSchema = makeExecutableSchema({
+    typeDefs: schemaAsSDL(schema)
   });
 
   addMockFunctionsToSchema({
-    schema,
+    schema: executableSchema,
     mocks: {
       ...commonMocks,
       ...mocks
@@ -189,7 +188,7 @@ Cypress.Commands.add("mockGraphql", (options: MockGraphQLOptions) => {
         ...options.operations
       };
     }
-  }).as(getAlias(options));
+  }).as(getAlias(mergedOptions));
 });
 
 Cypress.Commands.add("mockGraphqlOps", (options: SetOperationsOpts) => {
@@ -213,8 +212,8 @@ function schemaAsSDL(schema: string | string[] | IntrospectionQuery) {
 }
 
 function getRootValue(
-  operations: Partial<MockOperations>,
-  operationName: Extract<keyof MockOperations, string>,
+  operations: Partial<CypressMockOperationTypes>,
+  operationName: Extract<keyof CypressMockOperationTypes, string>,
   variables: any
 ) {
   if (!operationName || !operations[operationName]) {

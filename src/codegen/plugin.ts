@@ -53,7 +53,7 @@ export = {
         const type = allTypes[typeName];
         let typeVal = "unknown";
         if (isScalarType(type)) {
-          typeVal = `MockResolve<${tPrefix}Scalars['${pascalName}']>;`;
+          typeVal = `MockResolve<${tPrefix}Scalars['${typeName}']>;`;
         } else if (isInterfaceType(type) || isUnionType(type)) {
           typeVal = schema
             .getPossibleTypes(type)
