@@ -37,7 +37,7 @@ module.exports = (on, config) => {
   on("task", {
     getSchema() {
       return fs.readFileSync(
-        path.resolve(__dirname, "../../app-schema.graphql""),
+        path.resolve(__dirname, "../../app-schema.graphql"),
         "utf8"
       );
     }
