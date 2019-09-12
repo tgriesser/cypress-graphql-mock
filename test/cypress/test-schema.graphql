@@ -1,8 +1,16 @@
+scalar DateTime
+
+enum EnumField {
+  CAT
+  DOG
+}
+
 type User {
   id: Int!
   name: String!
   email: String!
   recipes: [Recipe!]!
+  createdAt: DateTime!
 }
 
 type Recipe {
@@ -17,6 +25,7 @@ type Query {
   user(id: Int!): User
   allRecipes: [Recipe!]!
   recipe(id: Int!): Recipe
+  enumField: EnumField
 }
 
 type Mutation {

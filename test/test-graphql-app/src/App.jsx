@@ -13,6 +13,7 @@ const queries = {
         id
         name
         email
+        createdAt
       }
     }
   `

@@ -1,19 +1,20 @@
 {
   "name": "cypress-graphql-mock",
   "description": "Mock out a GraphQL schema from the client",
-  "version": "0.3.1",
+  "version": "0.5.0-alpha.4",
   "scripts": {
-    "dev": "tsc --declarationMap -w",
+    "dev": "rm -rf dist && tsc -w",
     "cypress:open": "yarn cypress open --project ./test",
     "cypress:run": "yarn cypress run --project ./test",
     "test-app:run": "cd ./test/test-graphql-app && SKIP_PREFLIGHT_CHECK=true yarn start",
     "test-app:build": "cd ./test/test-graphql-app && SKIP_PREFLIGHT_CHECK=true yarn build",
     "test-app:serve": "serve -s -l 3000 test/test-graphql-app/build",
-    "prepublish": "tsc --declarationMap"
+    "prepublish": "rm -rf dist && tsc"
   },
-  "main": "dist",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
+    "codegen.js",
     "dist/",
     "src/",
     "yarn.lock",
@@ -38,19 +39,27 @@
     "tslib": "^1.9.3"
   },
   "peerDependencies": {
+    "@graphql-codegen/plugin-helpers": "^1.6.1",
     "cypress": "^3.1.3",
     "graphql": "^14.0.2"
   },
   "devDependencies": {
     "@cypress/webpack-preprocessor": "^4.1.0",
+    "@graphql-codegen/add": "^1.6.1",
+    "@graphql-codegen/cli": "^1.6.1",
+    "@graphql-codegen/plugin-helpers": "^1.6.1",
+    "@graphql-codegen/typescript": "^1.6.1",
+    "@graphql-codegen/typescript-document-nodes": "^1.6.1",
+    "@graphql-codegen/typescript-operations": "^1.6.1",
+    "@graphql-codegen/typescript-react-apollo": "^1.6.1",
     "@types/graphql": "^14.0.3",
     "cypress": "^3.4.1",
+    "graphql": "^14.0.2",
     "husky": "^1.2.0",
     "lint-staged": "^8.1.0",
     "prettier": "^1.15.3",
     "serve": "^11.1.0",
     "ts-loader": "^6.0.4",
-    "graphql": "^14.0.2",
     "typescript": "^3.2.2",
     "wait-on": "^3.3.0",
     "webpack": "^4.39.2"

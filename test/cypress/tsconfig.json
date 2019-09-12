@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "types": ["cypress"]
+    "strict": true
   },
   "include": ["./**/*.ts", "../../src/index.ts"]
 }

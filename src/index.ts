@@ -1,52 +1,74 @@
 /// <reference types="cypress" />
 import { graphql, IntrospectionQuery, GraphQLError } from "graphql";
 import { buildClientSchema, printSchema } from "graphql";
-import {
-  makeExecutableSchema,
-  addMockFunctionsToSchema,
-  IMocks
-} from "graphql-tools";
+import { makeExecutableSchema, addMockFunctionsToSchema } from "graphql-tools";
 
-interface MockGraphQLOptions<AllOperations extends Record<string, any>> {
-  schema: string | string[] | IntrospectionQuery;
-  name?: string;
-  mocks?: IMocks;
-  endpoint?: string;
-  operations?: Partial<AllOperations>;
-  /* Global Delay for stubbed responses (in ms) */
-  delay?: number;
+export interface MockGraphQLOptions extends SetOperationsOpts {
+  schema?: string | string[] | IntrospectionQuery;
+  mocks?: CypressMockBaseTypes;
 }
 
-interface SetOperationsOpts<AllOperations> {
+export interface SetOperationsOpts {
   name?: string;
   endpoint?: string;
   /* Operations object. Make sure that mocks must not be wrapped with `data` property */
-  operations?: Partial<AllOperations>;
+  operations?: Partial<CypressMockOperationTypes>;
   /* Delay for stubbed responses (in ms) */
   delay?: number;
 }
 
-interface GQLRequestPayload<AllOperations extends Record<string, any>> {
-  operationName: Extract<keyof AllOperations, string>;
+export interface GQLRequestPayload {
+  operationName: Extract<keyof CypressMockOperationTypes, string>;
   query: string;
   variables: any;
 }
 
+let commonMocks: any = null;
+let commonOptions: any = null;
+
 declare global {
+  interface CypressMockBaseTypes {}
+  interface CypressMockOperationTypes extends Record<string, any> {}
   namespace Cypress {
     interface Chainable {
-      mockGraphql<AllOperations = any>(
-        options?: MockGraphQLOptions<AllOperations>
-      ): Cypress.Chainable;
-      mockGraphqlOps<AllOperations = any>(
-        options?: SetOperationsOpts<AllOperations>
-      ): Cypress.Chainable;
+      mockGraphql(options?: MockGraphQLOptions): Cypress.Chainable;
+      mockGraphqlOps(options?: SetOperationsOpts): Cypress.Chainable;
     }
   }
 }
 
 const wait = (timeout: number) => <T>(response?: T) =>
   new Promise<T>(resolve => setTimeout(() => resolve(response), timeout));
+
+/**
+ * Add .baseGraphqlMocks() to the Cypress chain. Used when we want to set the
+ * mocks as common between multiple commands.
+ */
+export const setBaseGraphqlMocks = (mocks: CypressMockBaseTypes) => {
+  if (!commonMocks) {
+    commonMocks = mocks;
+  } else {
+    throw new Error(
+      `setBaseGraphqlMocks may only be called once, already called.`
+    );
+  }
+  return mocks;
+};
+
+/**
+ * Add .baseGraphqlMocks() to the Cypress chain. Used when we want to set the
+ * mocks as common between multiple commands.
+ */
+export const setBaseOperationOptions = (options: CypressMockBaseTypes) => {
+  if (!commonOptions) {
+    commonOptions = options;
+  } else {
+    throw new Error(
+      `setBaseOperationOptions may only be called once, already called.`
+    );
+  }
+  return options;
+};
 
 /**
  * Adds a .mockGraphql() and .mockGraphqlOps() methods to the cypress chain.
@@ -76,104 +98,102 @@ const wait = (timeout: number) => <T>(response?: T) =>
  *   }
  * })
  */
-Cypress.Commands.add(
-  "mockGraphql",
-  <AllOperations extends Record<string, any>>(
-    options: MockGraphQLOptions<AllOperations>
-  ) => {
-    const {
-      endpoint = "/graphql",
-      delay = 0,
-      operations = {},
-      mocks = {}
-    } = options;
+Cypress.Commands.add("mockGraphql", (options?: MockGraphQLOptions) => {
+  const mergedOptions = {
+    ...(commonOptions || {}),
+    ...(options || {})
+  };
+  const {
+    endpoint = "/graphql",
+    delay = 0,
+    operations = {},
+    mocks = {},
+    schema = undefined
+  } = mergedOptions;
 
-    const schema = makeExecutableSchema({
-      typeDefs: schemaAsSDL(options.schema)
-    });
+  if (!schema) {
+    throw new Error(
+      "Schema must be provided to the mockGraphql or setBaseOperationOptions"
+    );
+  }
 
-    addMockFunctionsToSchema({
-      schema,
-      mocks
-    });
+  const executableSchema = makeExecutableSchema({
+    typeDefs: schemaAsSDL(schema)
+  });
 
-    let currentDelay = delay;
-    let currentOps = operations;
+  addMockFunctionsToSchema({
+    schema: executableSchema,
+    mocks: {
+      ...commonMocks,
+      ...mocks
+    }
+  });
 
-    cy.on("window:before:load", win => {
-      const originalFetch = win.fetch;
-      function fetch(input: RequestInfo, init?: RequestInit) {
-        if (typeof input !== "string") {
-          throw new Error(
-            "Currently only support fetch(url, options), saw fetch(Request)"
-          );
-        }
-        if (input.indexOf(endpoint) !== -1 && init && init.method === "POST") {
-          const payload: GQLRequestPayload<AllOperations> = JSON.parse(
-            init.body as string
-          );
-          const { operationName, query, variables } = payload;
-          const rootValue = getRootValue<AllOperations>(
-            currentOps,
-            operationName,
-            variables
-          );
+  let currentDelay = delay;
+  let currentOps = operations;
 
-          if (
-            // Additional checks here because of transpilation.
-            // We will loose instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
-            rootValue instanceof GraphQLError ||
-            rootValue.constructor === GraphQLError ||
-            rootValue.constructor.name === "GraphQLError"
-          ) {
-            return Promise.resolve()
-              .then(wait(currentDelay))
-              .then(
-                () =>
-                  new Response(
-                    JSON.stringify({
-                      data: {},
-                      errors: [rootValue]
-                    })
-                  )
-              );
-          }
+  cy.on("window:before:load", win => {
+    const originalFetch = win.fetch;
+    function fetch(input: RequestInfo, init?: RequestInit) {
+      if (typeof input !== "string") {
+        throw new Error(
+          "Currently only support fetch(url, options), saw fetch(Request)"
+        );
+      }
+      if (input.indexOf(endpoint) !== -1 && init && init.method === "POST") {
+        const payload: GQLRequestPayload = JSON.parse(init.body as string);
+        const { operationName, query, variables } = payload;
+        const rootValue = getRootValue(currentOps, operationName, variables);
 
-          return graphql({
-            schema,
-            source: query,
-            variableValues: variables,
-            operationName,
-            rootValue
-          })
+        if (
+          // Additional checks here because of transpilation.
+          // We will loose instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
+          rootValue instanceof GraphQLError ||
+          rootValue.constructor === GraphQLError ||
+          rootValue.constructor.name === "GraphQLError"
+        ) {
+          return Promise.resolve()
             .then(wait(currentDelay))
-            .then((data: any) => new Response(JSON.stringify(data)));
+            .then(
+              () =>
+                new Response(
+                  JSON.stringify({
+                    data: {},
+                    errors: [rootValue]
+                  })
+                )
+            );
         }
-        return originalFetch(input, init);
-      }
-      cy.stub(win, "fetch", fetch).as("fetchStub");
-    });
-    //
-    cy.wrap({
-      setOperations: (options: SetOperationsOpts<AllOperations>) => {
-        currentDelay = options.delay || 0;
-        currentOps = {
-          ...currentOps,
-          ...options.operations
-        };
-      }
-    }).as(getAlias(options));
-  }
-);
 
-Cypress.Commands.add(
-  "mockGraphqlOps",
-  <AllOperations extends Record<string, any>>(
-    options: SetOperationsOpts<AllOperations>
-  ) => {
-    cy.get(`@${getAlias(options)}`).invoke("setOperations" as any, options);
-  }
-);
+        return graphql({
+          schema,
+          source: query,
+          variableValues: variables,
+          operationName,
+          rootValue
+        })
+          .then(wait(currentDelay))
+          .then((data: any) => new Response(JSON.stringify(data)));
+      }
+      return originalFetch(input, init);
+    }
+    cy.stub(win, "fetch", fetch).as("fetchStub");
+  });
+  //
+  cy.wrap({
+    setOperations: (options: SetOperationsOpts) => {
+      currentDelay = options.delay || 0;
+      currentOps = {
+        ...currentOps,
+        ...options.operations
+      };
+    }
+  }).as(getAlias(mergedOptions));
+});
+
+Cypress.Commands.add("mockGraphqlOps", (options: SetOperationsOpts) => {
+  cy.get(`@${getAlias(options)}`).invoke("setOperations" as any, options);
+});
 
 const getAlias = ({ name, endpoint }: { name?: string; endpoint?: string }) => {
   if (name || endpoint) {
@@ -191,9 +211,9 @@ function schemaAsSDL(schema: string | string[] | IntrospectionQuery) {
   return printSchema(buildClientSchema(schema));
 }
 
-function getRootValue<AllOperations>(
-  operations: Partial<AllOperations>,
-  operationName: Extract<keyof AllOperations, string>,
+function getRootValue(
+  operations: Partial<CypressMockOperationTypes>,
+  operationName: Extract<keyof CypressMockOperationTypes, string>,
   variables: any
 ) {
   if (!operationName || !operations[operationName]) {

@@ -1,0 +1,14 @@
+overwrite: true
+hooks:
+  afterAllFileWrite:
+    - prettier --write
+schema: "test/cypress/test-schema.graphql"
+generates:
+  test/cypress/graphql/generatedMockTypes.d.ts:
+    documents: "test/test-graphql-app/**/*.jsx"
+    plugins:
+      - typescript
+      - typescript-operations
+      - codegen.js
+    config:
+      enumsAsTypes: true
