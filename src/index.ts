@@ -29,6 +29,7 @@ interface SetOperationsOpts<AllOperations> {
 interface GQLRequestPayload<AllOperations extends Record<string, any>> {
   operationName: Extract<keyof AllOperations, string>;
   query: string;
+  extensions?: { persistedQuery: any };
   variables: any;
 }
 
@@ -102,6 +103,45 @@ Cypress.Commands.add(
 
     cy.on("window:before:load", win => {
       const originalFetch = win.fetch;
+
+      function mockGraphqlResponse(payload: GQLRequestPayload<AllOperations>): Promise<any> {
+        const { operationName, query, variables } = payload;
+        const rootValue = getRootValue<AllOperations>(
+          currentOps,
+          operationName,
+          variables
+        );
+
+        if (
+          // Additional checks here because of transpilation.
+          // We will loose instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
+          rootValue instanceof GraphQLError ||
+          rootValue.constructor === GraphQLError ||
+          rootValue.constructor.name === "GraphQLError"
+        ) {
+          return Promise.resolve({
+            data: {},
+            errors: [rootValue]
+          });
+        }
+
+        // If using apollo-link-persisted-queries, return an error so that Apollo
+        // Client will retry as a standard GraphQL query <https://git.io/fjV9B>:
+        if (payload.extensions && payload.extensions.persistedQuery) {
+          return Promise.resolve({
+            errors: [{ message: "PersistedQueryNotSupported" }]
+          });
+        }
+
+        return graphql({
+          schema,
+          source: query,
+          variableValues: variables,
+          operationName,
+          rootValue
+        });
+      }
+
       function fetch(input: RequestInfo, init?: RequestInit) {
         if (typeof input !== "string") {
           throw new Error(
@@ -112,40 +152,14 @@ Cypress.Commands.add(
           const payload: GQLRequestPayload<AllOperations> = JSON.parse(
             init.body as string
           );
-          const { operationName, query, variables } = payload;
-          const rootValue = getRootValue<AllOperations>(
-            currentOps,
-            operationName,
-            variables
-          );
 
-          if (
-            // Additional checks here because of transpilation.
-            // We will loose instanceof if we are not using specific babel plugin, or using pure TS to compile front-end
-            rootValue instanceof GraphQLError ||
-            rootValue.constructor === GraphQLError ||
-            rootValue.constructor.name === "GraphQLError"
-          ) {
-            return Promise.resolve()
-              .then(wait(currentDelay))
-              .then(
-                () =>
-                  new Response(
-                    JSON.stringify({
-                      data: {},
-                      errors: [rootValue]
-                    })
-                  )
-              );
-          }
+          // If an array of queries is sent, we're likely using apollo-link-batch-http
+          // and should resolve each of them independently before responding.
+          const response = Array.isArray(payload)
+            ? Promise.all(payload.map(mockGraphqlResponse))
+            : mockGraphqlResponse(payload);
 
-          return graphql({
-            schema,
-            source: query,
-            variableValues: variables,
-            operationName,
-            rootValue
-          })
+          return response
             .then(wait(currentDelay))
             .then((data: any) => new Response(JSON.stringify(data)));
         }
