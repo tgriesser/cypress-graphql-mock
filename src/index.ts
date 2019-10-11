@@ -166,7 +166,7 @@ Cypress.Commands.add("mockGraphql", (options?: MockGraphQLOptions) => {
         }
 
         return graphql({
-          schema,
+          schema: executableSchema,
           source: query,
           variableValues: variables,
           operationName,
