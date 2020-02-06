@@ -102,10 +102,10 @@ Cypress.Commands.add(
 
     cy.on("window:before:load", win => {
       const originalFetch = win.fetch;
-      function fetch(input: RequestInfo, init?: RequestInit) {
+      async function fetch(input: RequestInfo, init?: RequestInit) {
         if (typeof input !== "string") {
           throw new Error(
-            "Currently only support fetch(url, options), saw fetch(Request)"
+            `Currently only support fetch(url, options), saw fetch(Request), recieved: ${JSON.stringify(input)}`
           );
         }
         if (input.indexOf(endpoint) !== -1 && init && init.method === "POST") {
