@@ -102,10 +102,10 @@ Cypress.Commands.add(
 
     cy.on("window:before:load", win => {
       const originalFetch = win.fetch;
-      function fetch(input: RequestInfo, init?: RequestInit) {
+      async function fetch(input: RequestInfo, init?: RequestInit) {
         if (typeof input !== "string") {
           throw new Error(
-            "Currently only support fetch(url, options), saw fetch(Request)"
+            `Currently only support fetch(url, options), saw fetch(Request), recieved: ${JSON.stringify(input)}`
           );
         }
         if (input.indexOf(endpoint) !== -1 && init && init.method === "POST") {
@@ -113,7 +113,7 @@ Cypress.Commands.add(
             init.body as string
           );
           const { operationName, query, variables } = payload;
-          const rootValue = getRootValue<AllOperations>(
+          const rootValue = await getRootValue<AllOperations>(
             currentOps,
             operationName,
             variables
@@ -191,7 +191,7 @@ function schemaAsSDL(schema: string | string[] | IntrospectionQuery) {
   return printSchema(buildClientSchema(schema));
 }
 
-function getRootValue<AllOperations>(
+async function getRootValue<AllOperations>(
   operations: Partial<AllOperations>,
   operationName: Extract<keyof AllOperations, string>,
   variables: any
@@ -202,7 +202,7 @@ function getRootValue<AllOperations>(
   const op = operations[operationName];
   if (typeof op === "function") {
     try {
-      return op(variables);
+      return await op(variables);
     } catch (e) {
       return e; // properly handle dynamic throw new GraphQLError("message")
     }
